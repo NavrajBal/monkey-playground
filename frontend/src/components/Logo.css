@@ -1,0 +1,33 @@
+.logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo {
+  transition: all 0.3s ease;
+  border-radius: 4px;
+}
+
+.logo-light {
+  /* Light mode: normal appearance */
+  filter: none;
+}
+
+.logo-dark {
+  /* Dark mode: clean appearance without shadows or borders */
+  filter: none;
+  box-shadow: none;
+}
+
+/* Hover effects */
+.logo:hover {
+  transform: scale(1.05);
+}
+
+/* Responsive sizing */
+@media (max-width: 768px) {
+  .logo {
+    border-radius: 2px;
+  }
+}
