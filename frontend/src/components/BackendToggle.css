@@ -1,0 +1,66 @@
+.backend-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.backend-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.backend-toggle-buttons {
+  display: flex;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.backend-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--background-color);
+  border: none;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-right: 1px solid var(--border-color);
+}
+
+.backend-button:last-child {
+  border-right: none;
+}
+
+.backend-button:hover {
+  background: var(--hover-color);
+  color: var(--text-primary);
+}
+
+.backend-button.active {
+  background: var(--primary-color);
+  color: white;
+}
+
+.backend-button.active:hover {
+  background: var(--primary-color);
+}
+
+/* Slide in animation for notifications */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
