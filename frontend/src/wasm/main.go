@@ -1,0 +1,291 @@
+package main
+
+import (
+	"fmt"
+	"syscall/js"
+
+	"monkey-wasm/api"
+	"monkey-wasm/compiler"
+	"monkey-wasm/evaluator"
+	"monkey-wasm/lexer"
+	"monkey-wasm/object"
+	"monkey-wasm/parser"
+)
+
+// TokenInfo represents a token for WASM
+type TokenInfo struct {
+	Type     string `json:"type"`
+	Literal  string `json:"literal"`
+	Position int    `json:"position"`
+}
+
+// Note: Output buffer is now in evaluator.WasmOutputBuffer
+
+
+// WASM function to tokenize Monkey code
+func tokenize(this js.Value, args []js.Value) interface{} {
+	defer func() {
+		if r := recover(); r != nil {
+			// Handle panics gracefully
+		}
+	}()
+	
+	if len(args) != 1 {
+		return js.ValueOf(map[string]interface{}{
+			"error": "tokenize requires exactly 1 argument (code string)",
+		})
+	}
+
+	code := args[0].String()
+	if code == "" {
+		return js.ValueOf(map[string]interface{}{
+			"tokens": []TokenInfo{},
+		})
+	}
+	
+	l := lexer.New(code)
+	
+	var tokens []TokenInfo
+	position := 0
+	
+	for {
+		tok := l.NextToken()
+		if tok.Type == "EOF" {
+			break
+		}
+		
+		tokens = append(tokens, TokenInfo{
+			Type:     string(tok.Type),
+			Literal:  tok.Literal,
+			Position: position,
+		})
+		position += len(tok.Literal)
+	}
+
+	result := map[string]interface{}{
+		"tokens": tokens,
+	}
+
+	return js.ValueOf(result)
+}
+
+// WASM function to parse Monkey code to AST
+func parseAST(this js.Value, args []js.Value) interface{} {
+	defer func() {
+		if r := recover(); r != nil {
+			// Handle panics gracefully
+		}
+	}()
+	
+	if len(args) != 1 {
+		return js.ValueOf(map[string]interface{}{
+			"error": "parseAST requires exactly 1 argument (code string)",
+		})
+	}
+
+	code := args[0].String()
+	l := lexer.New(code)
+	p := parser.New(l)
+	program := p.ParseProgram()
+
+	if len(p.Errors()) > 0 {
+		return js.ValueOf(map[string]interface{}{
+			"error": p.Errors()[0],
+		})
+	}
+
+	// Convert AST to JSON-serializable format
+	astData := api.ConvertASTToJSON(program)
+
+	result := map[string]interface{}{
+		"ast": astData,
+	}
+
+	return js.ValueOf(result)
+}
+
+// WASM function to compile Monkey code
+func compile(this js.Value, args []js.Value) interface{} {
+	if len(args) != 1 {
+		return js.ValueOf(map[string]interface{}{
+			"error": "compile requires exactly 1 argument (code string)",
+		})
+	}
+
+	code := args[0].String()
+	l := lexer.New(code)
+	p := parser.New(l)
+	program := p.ParseProgram()
+
+	if len(p.Errors()) > 0 {
+		return js.ValueOf(map[string]interface{}{
+			"error": p.Errors()[0],
+		})
+	}
+
+	comp := compiler.New()
+	err := comp.Compile(program)
+	if err != nil {
+		return js.ValueOf(map[string]interface{}{
+			"error": err.Error(),
+		})
+	}
+
+	// Get bytecode instructions
+	bytecode := comp.Bytecode()
+	instructions := bytecode.Instructions.String()
+
+	result := map[string]interface{}{
+		"instructions": instructions,
+		"constants":    len(bytecode.Constants),
+	}
+
+	return js.ValueOf(result)
+}
+
+// WASM function to execute Monkey code
+func execute(this js.Value, args []js.Value) (result interface{}) {
+	defer func() {
+		if r := recover(); r != nil {
+			// Handle panics gracefully and return error response
+			fmt.Printf("WASM execute panic: %v\n", r)
+			result = js.ValueOf(map[string]interface{}{
+				"error": fmt.Sprintf("WASM panic: %v", r),
+			})
+		}
+	}()
+	
+	if len(args) != 1 {
+		return js.ValueOf(map[string]interface{}{
+			"error": "execute requires exactly 1 argument (code string)",
+		})
+	}
+
+	code := args[0].String()
+	l := lexer.New(code)
+	p := parser.New(l)
+	program := p.ParseProgram()
+
+	if len(p.Errors()) > 0 {
+		return js.ValueOf(map[string]interface{}{
+			"error": p.Errors()[0],
+		})
+	}
+
+	// Clear the global output buffer before execution
+	evaluator.InitWasmBuffer()
+	evaluator.WasmOutputBuffer.Reset()
+
+	// Use the evaluator with default environment (puts builtin is now WASM-compatible)
+	env := object.NewEnvironment()
+	evaluated := evaluator.Eval(program, env)
+	
+	if evaluated != nil {
+		if errorObj, ok := evaluated.(*object.Error); ok {
+			return js.ValueOf(map[string]interface{}{
+				"error": errorObj.Message,
+			})
+		}
+	}
+
+	// Get the captured output
+	var capturedOutput string
+	if evaluator.WasmOutputBuffer != nil {
+		capturedOutput = evaluator.WasmOutputBuffer.String()
+	}
+	
+	var resultStr string
+	if evaluated != nil {
+		resultStr = evaluated.Inspect()
+	} else {
+		resultStr = "null"
+	}
+	
+	responseData := map[string]interface{}{
+		"result": resultStr,
+		"output": capturedOutput,
+	}
+
+	fmt.Printf("WASM execute returning: %+v\n", responseData)
+	return js.ValueOf(responseData)
+}
+
+// WASM function for REPL-style evaluation
+func repl(this js.Value, args []js.Value) interface{} {
+	defer func() {
+		if r := recover(); r != nil {
+			// Handle panics gracefully
+		}
+	}()
+	
+	if len(args) != 1 {
+		return js.ValueOf(map[string]interface{}{
+			"error": "repl requires exactly 1 argument (code string)",
+		})
+	}
+
+	code := args[0].String()
+	l := lexer.New(code)
+	p := parser.New(l)
+	program := p.ParseProgram()
+
+	if len(p.Errors()) > 0 {
+		return js.ValueOf(map[string]interface{}{
+			"error": p.Errors()[0],
+		})
+	}
+
+	// Use evaluator for REPL (more interactive)
+	env := object.NewEnvironment()
+	evaluated := evaluator.Eval(program, env)
+
+	if evaluated != nil {
+		result := map[string]interface{}{
+			"result": evaluated.Inspect(),
+		}
+		return js.ValueOf(result)
+	}
+
+	return js.ValueOf(map[string]interface{}{
+		"result": "null",
+	})
+}
+
+func main() {
+	// Initialize WASM output buffer
+	evaluator.InitWasmBuffer()
+	
+	// Create a channel to keep the program running
+	done := make(chan struct{})
+
+	// Register WASM functions that won't be garbage collected
+	tokenizeFunc := js.FuncOf(tokenize)
+	parseFunc := js.FuncOf(parseAST)
+	compileFunc := js.FuncOf(compile)
+	executeFunc := js.FuncOf(execute)
+	replFunc := js.FuncOf(repl)
+
+	js.Global().Set("monkeyTokenize", tokenizeFunc)
+	js.Global().Set("monkeyParseAST", parseFunc)
+	js.Global().Set("monkeyCompile", compileFunc)
+	js.Global().Set("monkeyExecute", executeFunc)
+	js.Global().Set("monkeyRepl", replFunc)
+
+	// Signal that WASM is ready
+	js.Global().Set("monkeyWasmReady", js.ValueOf(true))
+
+	// Add a cleanup function that can be called from JS
+	cleanupFunc := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		tokenizeFunc.Release()
+		parseFunc.Release()
+		compileFunc.Release()
+		executeFunc.Release()
+		replFunc.Release()
+		close(done)
+		return nil
+	})
+	js.Global().Set("monkeyCleanup", cleanupFunc)
+
+	// Keep the program running until cleanup is called
+	<-done
+}
