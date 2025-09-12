@@ -8,14 +8,14 @@ import (
 	"os"
 	"reflect"
 
-	"monkey-wasm/ast"
-	"monkey-wasm/compiler"
-	"monkey-wasm/evaluator"
-	"monkey-wasm/lexer"
-	"monkey-wasm/object"
-	"monkey-wasm/parser"
-	"monkey-wasm/token"
-	"monkey-wasm/vm"
+	"github.com/NavrajBal/monkey-lang/ast"
+	"github.com/NavrajBal/monkey-lang/compiler"
+	"github.com/NavrajBal/monkey-lang/evaluator"
+	"github.com/NavrajBal/monkey-lang/lexer"
+	"github.com/NavrajBal/monkey-lang/object"
+	"github.com/NavrajBal/monkey-lang/parser"
+	"github.com/NavrajBal/monkey-lang/token"
+	"github.com/NavrajBal/monkey-lang/vm"
 )
 
 // Request/Response types

@@ -5,11 +5,12 @@ import (
 	"syscall/js"
 
 	"monkey-wasm/api"
-	"monkey-wasm/compiler"
 	"monkey-wasm/evaluator"
-	"monkey-wasm/lexer"
-	"monkey-wasm/object"
-	"monkey-wasm/parser"
+
+	"github.com/NavrajBal/monkey-lang/compiler"
+	"github.com/NavrajBal/monkey-lang/lexer"
+	"github.com/NavrajBal/monkey-lang/object"
+	"github.com/NavrajBal/monkey-lang/parser"
 )
 
 // TokenInfo represents a token for WASM

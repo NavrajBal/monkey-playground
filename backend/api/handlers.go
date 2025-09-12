@@ -8,14 +8,14 @@ import (
 	"os"
 	"reflect"
 
-	"monkey-playground-backend/ast"
-	"monkey-playground-backend/compiler"
-	"monkey-playground-backend/evaluator"
-	"monkey-playground-backend/lexer"
-	"monkey-playground-backend/object"
-	"monkey-playground-backend/parser"
-	"monkey-playground-backend/token"
-	"monkey-playground-backend/vm"
+	"github.com/NavrajBal/monkey-lang/ast"
+	"github.com/NavrajBal/monkey-lang/compiler"
+	"github.com/NavrajBal/monkey-lang/evaluator"
+	"github.com/NavrajBal/monkey-lang/lexer"
+	"github.com/NavrajBal/monkey-lang/object"
+	"github.com/NavrajBal/monkey-lang/parser"
+	"github.com/NavrajBal/monkey-lang/token"
+	"github.com/NavrajBal/monkey-lang/vm"
 )
 
 // Request/Response types

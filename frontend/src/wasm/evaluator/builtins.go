@@ -2,7 +2,8 @@ package evaluator
 
 import (
 	"bytes"
-	"monkey-wasm/object"
+
+	"github.com/NavrajBal/monkey-lang/object"
 )
 
 // Global buffer for WASM output capture
