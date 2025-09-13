@@ -1,7 +1,10 @@
 import axios from "axios";
 import { type ParsedAST } from "../types/ast";
+import { config } from "../config/config";
 
-const API_BASE_URL = "http://localhost:8080/api";
+const API_BASE_URL = config.apiUrl;
+// const API_BASE_URL = "http://monkey-playground-backend.vercel.app/api";
+// const API_BASE_URL = "http://localhost:8080/api";
 
 export interface TokenInfo {
   type: string;

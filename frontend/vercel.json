@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/*.go": {
+      "runtime": "go1.x"
+    }
+  },
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "installCommand": "npm install",
@@ -28,7 +33,7 @@
           "value": "*"
         },
         {
-          "key": "Access-Control-Allow-Methods", 
+          "key": "Access-Control-Allow-Methods",
           "value": "GET, POST, OPTIONS"
         },
         {

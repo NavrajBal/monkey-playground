@@ -143,6 +143,14 @@ class WasmService {
 
     try {
       const result = window.monkeyTokenize(code);
+
+      // Handle null/undefined results
+      if (!result || typeof result !== "object") {
+        return {
+          error: `WASM tokenize returned invalid response: ${typeof result}, value: ${result}`,
+        };
+      }
+
       return result;
     } catch (error) {
       console.error("Tokenization error:", error);
@@ -159,6 +167,14 @@ class WasmService {
 
     try {
       const result = window.monkeyParseAST(code);
+
+      // Handle null/undefined results
+      if (!result || typeof result !== "object") {
+        return {
+          error: `WASM parse returned invalid response: ${typeof result}, value: ${result}`,
+        };
+      }
+
       return result;
     } catch (error) {
       console.error("Parse error:", error);
@@ -175,6 +191,14 @@ class WasmService {
 
     try {
       const result = window.monkeyCompile(code);
+
+      // Handle null/undefined results
+      if (!result || typeof result !== "object") {
+        return {
+          error: `WASM compile returned invalid response: ${typeof result}, value: ${result}`,
+        };
+      }
+
       return result;
     } catch (error) {
       console.error("Compile error:", error);
@@ -226,7 +250,9 @@ class WasmService {
       console.log("WASM repl result:", result);
 
       if (!result || typeof result !== "object") {
-        return { error: "WASM repl returned invalid response" };
+        return {
+          error: `WASM repl returned invalid response: ${typeof result}, value: ${result}`,
+        };
       }
 
       return result;

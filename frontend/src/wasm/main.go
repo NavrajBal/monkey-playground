@@ -26,22 +26,26 @@ type TokenInfo struct {
 
 
 // WASM function to tokenize Monkey code
-func tokenize(this js.Value, args []js.Value) interface{} {
+func tokenize(this js.Value, args []js.Value) (result any) {
 	defer func() {
 		if r := recover(); r != nil {
-			// Handle panics gracefully
+			// Handle panics gracefully and return error response
+			fmt.Printf("WASM tokenize panic: %v\n", r)
+			result = js.ValueOf(map[string]any{
+				"error": fmt.Sprintf("WASM panic: %v", r),
+			})
 		}
 	}()
 	
 	if len(args) != 1 {
-		return js.ValueOf(map[string]interface{}{
+		return js.ValueOf(map[string]any{
 			"error": "tokenize requires exactly 1 argument (code string)",
 		})
 	}
 
 	code := args[0].String()
 	if code == "" {
-		return js.ValueOf(map[string]interface{}{
+		return js.ValueOf(map[string]any{
 			"tokens": []TokenInfo{},
 		})
 	}
@@ -65,23 +69,27 @@ func tokenize(this js.Value, args []js.Value) interface{} {
 		position += len(tok.Literal)
 	}
 
-	result := map[string]interface{}{
+	result = js.ValueOf(map[string]any{
 		"tokens": tokens,
-	}
+	})
 
-	return js.ValueOf(result)
+	return result
 }
 
 // WASM function to parse Monkey code to AST
-func parseAST(this js.Value, args []js.Value) interface{} {
+func parseAST(this js.Value, args []js.Value) (result any) {
 	defer func() {
 		if r := recover(); r != nil {
-			// Handle panics gracefully
+			// Handle panics gracefully and return error response
+			fmt.Printf("WASM parseAST panic: %v\n", r)
+			result = js.ValueOf(map[string]any{
+				"error": fmt.Sprintf("WASM panic: %v", r),
+			})
 		}
 	}()
 	
 	if len(args) != 1 {
-		return js.ValueOf(map[string]interface{}{
+		return js.ValueOf(map[string]any{
 			"error": "parseAST requires exactly 1 argument (code string)",
 		})
 	}
@@ -92,7 +100,7 @@ func parseAST(this js.Value, args []js.Value) interface{} {
 	program := p.ParseProgram()
 
 	if len(p.Errors()) > 0 {
-		return js.ValueOf(map[string]interface{}{
+		return js.ValueOf(map[string]any{
 			"error": p.Errors()[0],
 		})
 	}
@@ -100,17 +108,17 @@ func parseAST(this js.Value, args []js.Value) interface{} {
 	// Convert AST to JSON-serializable format
 	astData := api.ConvertASTToJSON(program)
 
-	result := map[string]interface{}{
+	result = js.ValueOf(map[string]any{
 		"ast": astData,
-	}
+	})
 
-	return js.ValueOf(result)
+	return result
 }
 
 // WASM function to compile Monkey code
-func compile(this js.Value, args []js.Value) interface{} {
+func compile(this js.Value, args []js.Value) any {
 	if len(args) != 1 {
-		return js.ValueOf(map[string]interface{}{
+		return js.ValueOf(map[string]any{
 			"error": "compile requires exactly 1 argument (code string)",
 		})
 	}
@@ -121,7 +129,7 @@ func compile(this js.Value, args []js.Value) interface{} {
 	program := p.ParseProgram()
 
 	if len(p.Errors()) > 0 {
-		return js.ValueOf(map[string]interface{}{
+		return js.ValueOf(map[string]any{
 			"error": p.Errors()[0],
 		})
 	}
@@ -129,7 +137,7 @@ func compile(this js.Value, args []js.Value) interface{} {
 	comp := compiler.New()
 	err := comp.Compile(program)
 	if err != nil {
-		return js.ValueOf(map[string]interface{}{
+		return js.ValueOf(map[string]any{
 			"error": err.Error(),
 		})
 	}
@@ -138,7 +146,7 @@ func compile(this js.Value, args []js.Value) interface{} {
 	bytecode := comp.Bytecode()
 	instructions := bytecode.Instructions.String()
 
-	result := map[string]interface{}{
+	result := map[string]any{
 		"instructions": instructions,
 		"constants":    len(bytecode.Constants),
 	}
@@ -152,14 +160,14 @@ func execute(this js.Value, args []js.Value) (result interface{}) {
 		if r := recover(); r != nil {
 			// Handle panics gracefully and return error response
 			fmt.Printf("WASM execute panic: %v\n", r)
-			result = js.ValueOf(map[string]interface{}{
+			result = js.ValueOf(map[string]any{
 				"error": fmt.Sprintf("WASM panic: %v", r),
 			})
 		}
 	}()
 	
 	if len(args) != 1 {
-		return js.ValueOf(map[string]interface{}{
+		return js.ValueOf(map[string]any{
 			"error": "execute requires exactly 1 argument (code string)",
 		})
 	}
@@ -170,7 +178,7 @@ func execute(this js.Value, args []js.Value) (result interface{}) {
 	program := p.ParseProgram()
 
 	if len(p.Errors()) > 0 {
-		return js.ValueOf(map[string]interface{}{
+		return js.ValueOf(map[string]any{
 			"error": p.Errors()[0],
 		})
 	}
@@ -185,7 +193,7 @@ func execute(this js.Value, args []js.Value) (result interface{}) {
 	
 	if evaluated != nil {
 		if errorObj, ok := evaluated.(*object.Error); ok {
-			return js.ValueOf(map[string]interface{}{
+			return js.ValueOf(map[string]any{
 				"error": errorObj.Message,
 			})
 		}
@@ -204,7 +212,7 @@ func execute(this js.Value, args []js.Value) (result interface{}) {
 		resultStr = "null"
 	}
 	
-	responseData := map[string]interface{}{
+	responseData := map[string]any{
 		"result": resultStr,
 		"output": capturedOutput,
 	}
@@ -214,15 +222,19 @@ func execute(this js.Value, args []js.Value) (result interface{}) {
 }
 
 // WASM function for REPL-style evaluation
-func repl(this js.Value, args []js.Value) interface{} {
+func repl(this js.Value, args []js.Value) (result interface{}) {
 	defer func() {
 		if r := recover(); r != nil {
-			// Handle panics gracefully
+			// Handle panics gracefully and return error response
+			fmt.Printf("WASM repl panic: %v\n", r)
+			result = js.ValueOf(map[string]any{
+				"error": fmt.Sprintf("WASM panic: %v", r),
+			})
 		}
 	}()
 	
 	if len(args) != 1 {
-		return js.ValueOf(map[string]interface{}{
+		return js.ValueOf(map[string]any{
 			"error": "repl requires exactly 1 argument (code string)",
 		})
 	}
@@ -233,7 +245,7 @@ func repl(this js.Value, args []js.Value) interface{} {
 	program := p.ParseProgram()
 
 	if len(p.Errors()) > 0 {
-		return js.ValueOf(map[string]interface{}{
+		return js.ValueOf(map[string]any{
 			"error": p.Errors()[0],
 		})
 	}
@@ -243,13 +255,13 @@ func repl(this js.Value, args []js.Value) interface{} {
 	evaluated := evaluator.Eval(program, env)
 
 	if evaluated != nil {
-		result := map[string]interface{}{
+		result := map[string]any{
 			"result": evaluated.Inspect(),
 		}
 		return js.ValueOf(result)
 	}
 
-	return js.ValueOf(map[string]interface{}{
+	return js.ValueOf(map[string]any{
 		"result": "null",
 	})
 }
