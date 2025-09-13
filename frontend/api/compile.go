@@ -9,6 +9,10 @@ import (
 	"github.com/NavrajBal/monkey-lang/parser"
 )
 
+type CodeRequest struct {
+	Code string `json:"code"`
+}
+
 type CompileResponse struct {
 	Bytecode     []byte        `json:"bytecode"`
 	Constants    []interface{} `json:"constants"`

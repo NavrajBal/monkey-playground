@@ -13,6 +13,10 @@ import (
 	"github.com/NavrajBal/monkey-lang/vm"
 )
 
+type CodeRequest struct {
+	Code string `json:"code"`
+}
+
 type ExecuteResponse struct {
 	Result string `json:"result"`
 	Output string `json:"output,omitempty"`

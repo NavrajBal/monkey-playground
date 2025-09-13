@@ -10,6 +10,10 @@ import (
 	"github.com/NavrajBal/monkey-lang/parser"
 )
 
+type CodeRequest struct {
+	Code string `json:"code"`
+}
+
 type ParseResponse struct {
 	AST   interface{} `json:"ast"`
 	Error string      `json:"error,omitempty"`
