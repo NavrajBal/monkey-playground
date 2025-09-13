@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "npm run build-wasm && vite",
-    "build": "npm run build-wasm && tsc -b && vite build",
-    "build-wasm": "./build-wasm.sh",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "build-wasm": "cd src/wasm && GOOS=js GOARCH=wasm go build -o ../../public/monkey.wasm main.go && rm -f monkey.wasm",
     "lint": "eslint .",
     "preview": "vite preview"
   },
