@@ -28,3 +28,6 @@ dist-ssr
 backend/monkey-api
 backend/monkey-playground-backend
 frontend/src/wasm/monkey-api
+# WASM build artifacts
+*.wasm
+src/wasm/monkey.wasm
