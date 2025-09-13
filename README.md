@@ -2,6 +2,7 @@
 
 An interactive web-based playground for the **Monkey programming language** - a language designed for learning interpreters and compilers. Write, execute, and explore Monkey code right in your browser with real-time tokenization, AST visualization, and bytecode compilation. Find more information about MonkeyLang at https://monkeylang.org/.
 
+For more details on the backend checkout my repo on monkey-lang, https://github.com/NavrajBal/monkey-lang.
 ## 📋 Table of Contents
 
 - [🌐 Live Demo](#-live-demo)
