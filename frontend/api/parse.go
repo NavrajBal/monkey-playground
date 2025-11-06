@@ -76,7 +76,7 @@ func ConvertASTToJSON(node ast.Node) map[string]interface{} {
 	// Add common fields
 	result["string"] = node.String()
 	
-	// Handle specific node types (simplified version)
+	// Handle specific node types
 	switch n := node.(type) {
 	case *ast.Program:
 		var statements []map[string]interface{}
@@ -97,6 +97,20 @@ func ConvertASTToJSON(node ast.Node) map[string]interface{} {
 			result["Value"] = ConvertASTToJSON(n.Value)
 		}
 		
+	case *ast.ReturnStatement:
+		result["Token"] = map[string]interface{}{
+			"Type":    string(n.Token.Type),
+			"Literal": n.Token.Literal,
+		}
+		if n.ReturnValue != nil {
+			result["ReturnValue"] = ConvertASTToJSON(n.ReturnValue)
+		}
+		
+	case *ast.ExpressionStatement:
+		if n.Expression != nil {
+			result["Expression"] = ConvertASTToJSON(n.Expression)
+		}
+		
 	case *ast.Identifier:
 		result["Token"] = map[string]interface{}{
 			"Type":    string(n.Token.Type),
@@ -110,6 +124,89 @@ func ConvertASTToJSON(node ast.Node) map[string]interface{} {
 			"Literal": n.Token.Literal,
 		}
 		result["Value"] = n.Value
+		
+	case *ast.Boolean:
+		result["Token"] = map[string]interface{}{
+			"Type":    string(n.Token.Type),
+			"Literal": n.Token.Literal,
+		}
+		result["Value"] = n.Value
+		
+	case *ast.StringLiteral:
+		result["Token"] = map[string]interface{}{
+			"Type":    string(n.Token.Type),
+			"Literal": n.Token.Literal,
+		}
+		result["Value"] = n.Value
+		
+	case *ast.InfixExpression:
+		result["Token"] = map[string]interface{}{
+			"Type":    string(n.Token.Type),
+			"Literal": n.Token.Literal,
+		}
+		result["Operator"] = n.Operator
+		if n.Left != nil {
+			result["Left"] = ConvertASTToJSON(n.Left)
+		}
+		if n.Right != nil {
+			result["Right"] = ConvertASTToJSON(n.Right)
+		}
+		
+	case *ast.PrefixExpression:
+		result["Token"] = map[string]interface{}{
+			"Type":    string(n.Token.Type),
+			"Literal": n.Token.Literal,
+		}
+		result["Operator"] = n.Operator
+		if n.Right != nil {
+			result["Right"] = ConvertASTToJSON(n.Right)
+		}
+		
+	case *ast.IfExpression:
+		result["Token"] = map[string]interface{}{
+			"Type":    string(n.Token.Type),
+			"Literal": n.Token.Literal,
+		}
+		if n.Condition != nil {
+			result["Condition"] = ConvertASTToJSON(n.Condition)
+		}
+		if n.Consequence != nil {
+			result["Consequence"] = ConvertASTToJSON(n.Consequence)
+		}
+		if n.Alternative != nil {
+			result["Alternative"] = ConvertASTToJSON(n.Alternative)
+		}
+		
+	case *ast.BlockStatement:
+		var statements []map[string]interface{}
+		for _, stmt := range n.Statements {
+			statements = append(statements, ConvertASTToJSON(stmt))
+		}
+		result["statements"] = statements
+		
+	case *ast.FunctionLiteral:
+		result["Token"] = map[string]interface{}{
+			"Type":    string(n.Token.Type),
+			"Literal": n.Token.Literal,
+		}
+		var parameters []map[string]interface{}
+		for _, param := range n.Parameters {
+			parameters = append(parameters, ConvertASTToJSON(param))
+		}
+		result["Parameters"] = parameters
+		if n.Body != nil {
+			result["Body"] = ConvertASTToJSON(n.Body)
+		}
+		
+	case *ast.CallExpression:
+		if n.Function != nil {
+			result["Function"] = ConvertASTToJSON(n.Function)
+		}
+		var arguments []map[string]interface{}
+		for _, arg := range n.Arguments {
+			arguments = append(arguments, ConvertASTToJSON(arg))
+		}
+		result["Arguments"] = arguments
 	}
 	
 	return result
