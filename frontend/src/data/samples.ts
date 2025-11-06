@@ -57,7 +57,7 @@ puts("Rest:", rest(numbers));
 let extended = push(numbers, 6);
 puts("After push:", extended);
 
-let mixed = [1, "hello", true, fn(x) { x * 2 }];
+let mixed = [1, "hello", true];
 mixed;`,
   },
   {

@@ -30,18 +30,16 @@ var builtins = map[string]*object.Builtin{
 	}},
 	"puts": {Fn: func(args ...object.Object) object.Object {
 		// WASM-compatible puts - write to a global buffer instead of stdout
+		// Match VM behavior: print each argument on a new line
 		InitWasmBuffer() // Ensure buffer is initialized
 		
-		for i, arg := range args {
+		for _, arg := range args {
 			if arg == nil {
 				continue // Skip nil arguments
 			}
-			if i > 0 {
-				WasmOutputBuffer.WriteString(" ")
-			}
 			WasmOutputBuffer.WriteString(arg.Inspect())
+			WasmOutputBuffer.WriteString("\n")
 		}
-		WasmOutputBuffer.WriteString("\n")
 		return NULL
 	}},
 	"first": {Fn: func(args ...object.Object) object.Object {

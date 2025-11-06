@@ -239,13 +239,25 @@ func execute(this js.Value, args []js.Value) (result interface{}) {
 		resultStr = "null"
 	}
 	
+	// Use JSON encoding for proper serialization
 	responseData := map[string]any{
 		"result": resultStr,
 		"output": capturedOutput,
 	}
 
-	fmt.Printf("WASM execute returning: %+v\n", responseData)
-	return js.ValueOf(responseData)
+	jsonBytes, err := json.Marshal(responseData)
+	if err != nil {
+		return js.ValueOf(map[string]any{
+			"error": fmt.Sprintf("Failed to marshal response: %v", err),
+		})
+	}
+
+	// Parse JSON string to JavaScript object
+	jsonStr := string(jsonBytes)
+	jsonParser := js.Global().Get("JSON")
+	parsed := jsonParser.Call("parse", jsonStr)
+
+	return parsed
 }
 
 // WASM function for REPL-style evaluation
@@ -277,20 +289,46 @@ func repl(this js.Value, args []js.Value) (result interface{}) {
 		})
 	}
 
+	// Clear the global output buffer before execution
+	evaluator.InitWasmBuffer()
+	evaluator.WasmOutputBuffer.Reset()
+
 	// Use evaluator for REPL (more interactive)
 	env := object.NewEnvironment()
 	evaluated := evaluator.Eval(program, env)
 
+	var resultStr string
 	if evaluated != nil {
-		result := map[string]any{
-			"result": evaluated.Inspect(),
-		}
-		return js.ValueOf(result)
+		resultStr = evaluated.Inspect()
+	} else {
+		resultStr = "null"
 	}
 
-	return js.ValueOf(map[string]any{
-		"result": "null",
-	})
+	// Get the captured output
+	var capturedOutput string
+	if evaluator.WasmOutputBuffer != nil {
+		capturedOutput = evaluator.WasmOutputBuffer.String()
+	}
+
+	// Use JSON encoding for proper serialization
+	responseData := map[string]any{
+		"result": resultStr,
+		"output": capturedOutput,
+	}
+
+	jsonBytes, err := json.Marshal(responseData)
+	if err != nil {
+		return js.ValueOf(map[string]any{
+			"error": fmt.Sprintf("Failed to marshal response: %v", err),
+		})
+	}
+
+	// Parse JSON string to JavaScript object
+	jsonStr := string(jsonBytes)
+	jsonParser := js.Global().Get("JSON")
+	parsed := jsonParser.Call("parse", jsonStr)
+
+	return parsed
 }
 
 func main() {
