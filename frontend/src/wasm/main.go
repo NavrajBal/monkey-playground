@@ -3,6 +3,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"syscall/js"
 
@@ -45,9 +46,12 @@ func tokenize(this js.Value, args []js.Value) (result any) {
 
 	code := args[0].String()
 	if code == "" {
-		return js.ValueOf(map[string]any{
+		jsonBytes, _ := json.Marshal(map[string]any{
 			"tokens": []TokenInfo{},
 		})
+		jsonStr := string(jsonBytes)
+		jsonParser := js.Global().Get("JSON")
+		return jsonParser.Call("parse", jsonStr)
 	}
 	
 	l := lexer.New(code)
@@ -69,11 +73,22 @@ func tokenize(this js.Value, args []js.Value) (result any) {
 		position += len(tok.Literal)
 	}
 
-	result = js.ValueOf(map[string]any{
+	// Use JSON encoding for proper serialization
+	jsonBytes, err := json.Marshal(map[string]any{
 		"tokens": tokens,
 	})
+	if err != nil {
+		return js.ValueOf(map[string]any{
+			"error": fmt.Sprintf("Failed to marshal tokens: %v", err),
+		})
+	}
 
-	return result
+	// Parse JSON string to JavaScript object
+	jsonStr := string(jsonBytes)
+	jsonParser := js.Global().Get("JSON")
+	parsed := jsonParser.Call("parse", jsonStr)
+
+	return parsed
 }
 
 // WASM function to parse Monkey code to AST
@@ -108,11 +123,23 @@ func parseAST(this js.Value, args []js.Value) (result any) {
 	// Convert AST to JSON-serializable format
 	astData := api.ConvertASTToJSON(program)
 
-	result = js.ValueOf(map[string]any{
+	// Use JSON encoding to properly serialize nested structures
+	// js.ValueOf doesn't handle deeply nested maps correctly, so we use JSON
+	jsonBytes, err := json.Marshal(map[string]any{
 		"ast": astData,
 	})
+	if err != nil {
+		return js.ValueOf(map[string]any{
+			"error": fmt.Sprintf("Failed to marshal AST: %v", err),
+		})
+	}
 
-	return result
+	// Parse JSON string to JavaScript object using JSON.parse
+	jsonStr := string(jsonBytes)
+	jsonParser := js.Global().Get("JSON")
+	parsed := jsonParser.Call("parse", jsonStr)
+
+	return parsed
 }
 
 // WASM function to compile Monkey code
