@@ -104,30 +104,108 @@ const TokenizerViewer: React.FC<TokenizerViewerProps> = ({ tokens, code }) => {
       );
     }
 
+    // Process tokens in order, finding them sequentially in the code
+    // This ensures correct ordering and prevents misplacement
     const elements: React.ReactElement[] = [];
-    let lastPosition = 0;
+    let codePos = 0;
 
-    tokens.forEach((token, index) => {
-      // Add any text between tokens
-      if (token.position > lastPosition) {
-        const betweenText = code.slice(lastPosition, token.position);
-        if (betweenText) {
+    tokens.forEach((token, tokenIdx) => {
+      // Search for this token literal starting from where we've processed so far
+      // This ensures we find tokens in the correct order
+      const remainingCode = code.slice(codePos);
+      const tokenIndexInCode = remainingCode.indexOf(token.literal);
+
+      if (tokenIndexInCode === -1) {
+        // Token not found - this shouldn't happen, but handle gracefully
+        // Try to find it near the expected position as fallback
+        const searchStart = Math.max(0, token.position - 20);
+        const searchEnd = Math.min(
+          code.length,
+          token.position + token.literal.length + 20
+        );
+        const searchText = code.slice(searchStart, searchEnd);
+        const fallbackIndex = searchText.indexOf(token.literal);
+
+        if (fallbackIndex !== -1) {
+          const actualTokenStart = searchStart + fallbackIndex;
+
+          // Add whitespace before this token
+          if (actualTokenStart > codePos) {
+            const whitespace = code.slice(codePos, actualTokenStart);
+            if (whitespace) {
+              elements.push(
+                <span key={`ws-${tokenIdx}`} className="token-whitespace">
+                  {whitespace}
+                </span>
+              );
+            }
+          }
+
+          // Add the token
+          const actualTokenEnd = actualTokenStart + token.literal.length;
+          const tokenText = code.slice(actualTokenStart, actualTokenEnd);
+
+          const isSelected = selectedTokenIndex === tokenIdx;
+          const isHovered = hoveredTokenIndex === tokenIdx;
+
+          if (tokenText === token.literal) {
+            elements.push(
+              <span
+                key={`token-${tokenIdx}`}
+                className={`token ${isSelected ? "selected" : ""} ${
+                  isHovered ? "hovered" : ""
+                }`}
+                style={{
+                  backgroundColor:
+                    getTokenColor(token.type) +
+                    (isSelected ? "ff" : isHovered ? "cc" : "99"),
+                  color: "white",
+                }}
+                onClick={() => setSelectedTokenIndex(tokenIdx)}
+                onMouseEnter={() => setHoveredTokenIndex(tokenIdx)}
+                onMouseLeave={() => setHoveredTokenIndex(null)}
+              >
+                {tokenText}
+              </span>
+            );
+            codePos = actualTokenEnd;
+          }
+        }
+        return; // Skip this token if we can't find it
+      }
+
+      // Found the token at the correct position
+      const actualTokenStart = codePos + tokenIndexInCode;
+
+      // Add whitespace before this token
+      if (actualTokenStart > codePos) {
+        const whitespace = code.slice(codePos, actualTokenStart);
+        if (whitespace) {
           elements.push(
-            <span key={`between-${index}`} className="token-whitespace">
-              {betweenText}
+            <span key={`ws-${tokenIdx}`} className="token-whitespace">
+              {whitespace}
             </span>
           );
         }
       }
 
       // Add the token
-      const isSelected = selectedTokenIndex === index;
-      const isHovered = hoveredTokenIndex === index;
-      const tokenEnd = token.position + token.literal.length;
+      const actualTokenEnd = actualTokenStart + token.literal.length;
+      const tokenText = code.slice(actualTokenStart, actualTokenEnd);
+
+      // Verify the token text matches (safety check)
+      if (tokenText !== token.literal) {
+        console.warn(
+          `Token mismatch at position ${actualTokenStart}: expected "${token.literal}", got "${tokenText}"`
+        );
+      }
+
+      const isSelected = selectedTokenIndex === tokenIdx;
+      const isHovered = hoveredTokenIndex === tokenIdx;
 
       elements.push(
         <span
-          key={`token-${index}`}
+          key={`token-${tokenIdx}`}
           className={`token ${isSelected ? "selected" : ""} ${
             isHovered ? "hovered" : ""
           }`}
@@ -137,29 +215,18 @@ const TokenizerViewer: React.FC<TokenizerViewerProps> = ({ tokens, code }) => {
               (isSelected ? "ff" : isHovered ? "cc" : "99"),
             color: "white",
           }}
-          onClick={() => setSelectedTokenIndex(index)}
-          onMouseEnter={() => setHoveredTokenIndex(index)}
+          onClick={() => setSelectedTokenIndex(tokenIdx)}
+          onMouseEnter={() => setHoveredTokenIndex(tokenIdx)}
           onMouseLeave={() => setHoveredTokenIndex(null)}
         >
-          {token.literal}
+          {tokenText}
         </span>
       );
 
-      lastPosition = tokenEnd;
+      codePos = actualTokenEnd;
     });
 
-    // Add any remaining text
-    if (lastPosition < code.length) {
-      const remainingText = code.slice(lastPosition);
-      if (remainingText) {
-        elements.push(
-          <span key="remaining" className="token-whitespace">
-            {remainingText}
-          </span>
-        );
-      }
-    }
-
+    // Don't render anything after the last token - this prevents duplicate text
     return <div className="highlighted-code">{elements}</div>;
   };
 

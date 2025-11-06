@@ -8,7 +8,7 @@ export const config = {
   // API configuration (when using 'api' backend)
   apiUrl: import.meta.env.PROD
     ? "/api" // Vercel Functions will be available at /api/*
-    : "http://localhost:8080",
+    : "http://localhost:8080/api",
 
   // Development settings
   enableDebugLogs: true,
